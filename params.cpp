@@ -26,10 +26,10 @@ void params::readparams(int n, char* cmdline[])
   d = 1;
   dim = 2;
   disU = 1.0;
-  doTriJumps = false;
+  doTriJumps = true;
   eonsteps = 256; //# of time step in which the ext field is on
   extf = 0;
-  Ex = 1.0;
+  Ex = 0.0;
   Ey = 0.0;
   Ez = 0.0;
   fill = 0.5;
@@ -37,7 +37,7 @@ void params::readparams(int n, char* cmdline[])
   htype = 3;    //1: NN, 2: random,
   Hx = 0.0;
   Hy = 0.0;
-  Hz = 1.0;
+  Hz = 0.0;
   initruns = 1;
   inittemp = 0.02;
   istate = 1; //random state
@@ -75,9 +75,8 @@ void params::readparams(int n, char* cmdline[])
   xpbc = true; //periodic boundary condition in x-direction can be lifted
   outputprefix = "../../data/";
   temp = 0.3;
-  Ex = temp/10;
-  Hz = temp/4;
   randShift = 0.1;
+  Hz = 0.05;
 
 
   char Hz_s [10], Ex_s[10], temp_s[10];
@@ -87,7 +86,7 @@ void params::readparams(int n, char* cmdline[])
 
   outputendfix = "Hz_" + string(Hz_s)+  "_Ex_" + string(Ex_s) + "_T_" + string(temp_s);
   writelines = 10000;
-  timesteps = 10001;
+  timesteps = 100000;
   if(n >1)
   {
 
@@ -155,6 +154,7 @@ void params::readparams(int n, char* cmdline[])
        writelines = pf->getint("writelines",writelines);
        randShift = pf->getdouble("randShift",randShift);
    }
+
     char Hz_s [10], Ex_s[10], temp_s[10];
     sprintf(Hz_s, "%.5f", Hz);
     sprintf(Ex_s, "%.5f", Ex);

@@ -27,6 +27,7 @@ L = 100
 n = 10
 fill = 0.5
 directory = "../dataMottNoTri/"
+#directory = "quickData/"
 
 for i in range(0,n):
 	for T in T_lin:

@@ -16,6 +16,7 @@
 #include "params.h"
 #include "run.h"
 #include "randomc.h"
+#include <chrono>
 
 
 /* Problem:
@@ -38,7 +39,7 @@ int main(int argc, char* argv[])
 //  fflush(stdout);
   run runSimul = run();
 
-//  auto start = std::chrono::system_clock::now();
+  auto start = std::chrono::system_clock::now();
   switch (p->ctype) {
          case 1: runSimul.runCurrent(p);              break;
          case 2: runSimul.runCurrentTrace(p);         break;
@@ -51,8 +52,8 @@ int main(int argc, char* argv[])
   //int a;scanf("%d",a);
 
 
-//  auto end = std::chrono::system_clock::now();
-//  std::chrono::duration<double> diff = end - start;
-//  printf("Elapsed time: %.3f min\n",diff.count() / 60.0);
+  auto end = std::chrono::system_clock::now();
+  std::chrono::duration<double> diff = end - start;
+  printf("Elapsed time: %.3f min\n",diff.count() / 60.0);
   return 0;
 }
