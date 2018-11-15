@@ -19,15 +19,6 @@
 #include <chrono>
 
 
-/* Problem:
- * The integral that depends on the positions of both j and k can't be precalculated
- * Instead, do it numerically via python scipy. Make a script that does this calculation
- * for all combinations. This script should save to a text file. In the c++ script, do an
- * iftest to check if this text file exists. And if it doesn't c++ should call the script
- *
- * These integrals also pop up again but with extra factors in the field dot product!
- * */
-
 int main(int argc, char* argv[])
 {
   params *p=new params();

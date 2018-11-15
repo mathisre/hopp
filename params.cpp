@@ -37,7 +37,7 @@ void params::readparams(int n, char* cmdline[])
   htype = 3;    //1: NN, 2: random,
   Hx = 0.0;
   Hy = 0.0;
-  Hz = 0.0;
+  Hz = 0.1;
   initruns = 1;
   inittemp = 0.02;
   istate = 1; //random state
@@ -58,7 +58,7 @@ void params::readparams(int n, char* cmdline[])
   running = false;
   runs = 1;
   screen = 0.5; //screening length: < 0 sets: len/2 (max: len-1)
-  seed2 = 3;
+  seed2 = 7;
   skipsteps = 0; //all timesteps are recorded
   spesfilename = "";
   spesfilenamePassive = "";
@@ -76,7 +76,6 @@ void params::readparams(int n, char* cmdline[])
   outputprefix = "../../data/";
   temp = 0.3;
   randShift = 0.1;
-  Hz = 0.05;
 
 
   char Hz_s [10], Ex_s[10], temp_s[10];
@@ -86,7 +85,7 @@ void params::readparams(int n, char* cmdline[])
 
   outputendfix = "Hz_" + string(Hz_s)+  "_Ex_" + string(Ex_s) + "_T_" + string(temp_s);
   writelines = 10000;
-  timesteps = 100000;
+  timesteps = 10;
   if(n >1)
   {
 

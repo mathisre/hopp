@@ -252,6 +252,7 @@ void run::runCurrentRandPos(class params *p)
   MKcurr->setH(Hx, Hy, Hz);
   printf("E set to [%le %le %le]\n",Ex,Ey,Ez);
   printf("H set to [%le %le %le]\n",Hx,Hy,Hz);
+  printf("Timesteps set to %d\n",steps);
   fflush(stdout);
 
   // maxJL = 5 from param. maxJL = max jump length? MKCurr has both maxJL1 and maxJL2 = 2*maxJL1 +1
@@ -259,18 +260,16 @@ void run::runCurrentRandPos(class params *p)
   es->ran2(p->seed2); // again? Why?
   MKcurr->setES(es);
 
-  printf("Before init\n");
+  printf("Initializing transition rates\n");
   MKcurr->init(D, L, N, p->maxJL, p->loc, 1.0/p->temp,p->maxProbability, p->doTriJumps, p->randShift); // <- calculates rates
-  printf("After init\n");
   MKcurr->setES(es);
 
   MKcurr->setWritelines(p->writelines);
   MKcurr->setRatefun(p->ratefun); //
-
-
   MKcurr->setMTseed(p->seed2); // seed for MT RanGen to be used in getJump, this one uses Mersenne
+
+
   printf("MKcurrent initialized\n");
-  printf("Doing %d timesteps\n", steps);
 //  fflush(stdout);
 //  MKcurr->writeGammaToFile(p->Hz);
 

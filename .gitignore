@@ -1,2 +1,4 @@
 *.o
 *.dat
+*.ini
+debug.o

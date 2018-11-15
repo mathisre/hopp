@@ -173,26 +173,25 @@ void MKcurrentRandPos::init(int D1, int L1, int N1, int maxJL1, double a1, doubl
     sitePositions[i][0] = i%L + (es->ran2(0)-0.5)*randShift;
     sitePositions[i][1] = i/L + (es->ran2(0)-0.5)*randShift;
 
-//    sitePositions[i][0] = es->ran2(0)*L;
-//    sitePositions[i][1] = es->ran2(0)*L;
+    sitePositions[i][0] = es->ran2(0)*L;
+    sitePositions[i][1] = es->ran2(0)*L;
 
 
   }
 
 
-  FILE* f;
-  string st;
-    string filename = "randPositions.dat";
-  f=FileCreate(filename);
+//  FILE* f;
+//  string st;
+//    string filename = "randPositions.dat";
+//  f=FileCreate(filename);
 
-  for (i=0; i<N; i++){
-        st = DoubleToStr(sitePositions[i][0]) + "\t " + DoubleToStr(sitePositions[i][1]) + "\n";
-        FileWrite(f,st.c_str(),st.length());
-    }
+//  for (i=0; i<N; i++){
+//        st = DoubleToStr(sitePositions[i][0]) + "\t " + DoubleToStr(sitePositions[i][1]) + "\n";
+//        FileWrite(f,st.c_str(),st.length());
+//    }
 
-  FileClose(f);
-  double meandx = 0;
-  double meandy = 0;
+//  FileClose(f);
+
 
   distanceMatrix = new double*[N];
   for (i=0; i<N; i++){
@@ -209,9 +208,6 @@ void MKcurrentRandPos::init(int D1, int L1, int N1, int maxJL1, double a1, doubl
         else if (dy < -L/2) dy += L;
 
 
-        meandx += dx;
-        meandy += dy;
-
         distanceMatrix[i][j] = sqrt(dx*dx + dy*dy);
         if (distanceMatrix[i][j] < maxJL) Nmem[i]++;
     }
@@ -219,7 +215,7 @@ void MKcurrentRandPos::init(int D1, int L1, int N1, int maxJL1, double a1, doubl
     final2Site[i] = new int[Nmem[i]];
     dx2Site[i] = new double[Nmem[i]];
     dy2Site[i] = new double[Nmem[i]];
-    Nmem3Sites[i] = (Nmem[i]-1)*(Nmem[i]-1);
+    Nmem3Sites[i] = (Nmem[i]-1)*(Nmem[i]-1) - (Nmem[i]-1);
 
 
     GammaT3Sites[i] = new double[Nmem3Sites[i]];
@@ -233,37 +229,33 @@ void MKcurrentRandPos::init(int D1, int L1, int N1, int maxJL1, double a1, doubl
     dyFinal[i] = new double[Nmem3Sites[i]];
   }
 
-  printf("Total meandx: %f, Total meandy: %f\n", meandx/(N*N), meandy/(N*N));
 
   totGammaT2tot = 0;
   totGammaT3tot = 0;
 
   double sum = 0;
+  double sum2 = 0;
   double sum3 = 0;
-  double prev = 0;
 
   meandx = 0;
   meandy = 0;
 
   for (i=0; i<N; i++){
 
-      gamma = 0.0;
+      gamma  = 0.0;
       gamma3 = 0.0;
       n  = 0;
       n3 = 0;
+      sum=0;
+      sum3=0;
 
       for (j=0; j<N; j++){
+          sum3 =0;
           overlap_ij = distanceMatrix[i][j];
           if (overlap_ij < maxJL){
               if (i != j){
-                  gamma += exp(-A*overlap_ij/tau1);
-                  GammaT[i][n] = gamma;
-//                  sum += gamma;
-                  final2Site[i][n] = j;
-
                   dx2Site[i][n] = sitePositions[j][0] - sitePositions[i][0];
                   dy2Site[i][n] = sitePositions[j][1] - sitePositions[i][1];
-
 
                   if      (dx2Site[i][n] >  L/2) dx2Site[i][n] -= L;
                   else if (dx2Site[i][n] < -L/2) dx2Site[i][n] += L;
@@ -271,9 +263,9 @@ void MKcurrentRandPos::init(int D1, int L1, int N1, int maxJL1, double a1, doubl
                   if      (dy2Site[i][n] >  L/2) dy2Site[i][n] -= L;
                   else if (dy2Site[i][n] < -L/2) dy2Site[i][n] += L;
 
-
-                  meandx += dx2Site[i][n];
-                  meandy += dy2Site[i][n];
+                  gamma += exp(-A*overlap_ij/tau1);
+                  GammaT[i][n] = gamma;
+                  final2Site[i][n] = j;
 
                   n++;
 
@@ -281,6 +273,7 @@ void MKcurrentRandPos::init(int D1, int L1, int N1, int maxJL1, double a1, doubl
                   if (doTriJumps)
                   for (k=0; k<N; k++){
                       if (k != j){
+                          if (k != i){
                           overlap_ik = distanceMatrix[i][k];
                           if (overlap_ik < maxJL) {
 
@@ -290,37 +283,38 @@ void MKcurrentRandPos::init(int D1, int L1, int N1, int maxJL1, double a1, doubl
                               dxInter[i][n3] = sitePositions[k][0] - sitePositions[i][0];
                               dyInter[i][n3] = sitePositions[k][1] - sitePositions[i][1];
 
+                              if      (dxFinal[i][n3] >  L/2) dxFinal[i][n3] -= L;
+                              else if (dxFinal[i][n3] < -L/2) dxFinal[i][n3] += L;
 
+                              if      (dyFinal[i][n3] >  L/2) dyFinal[i][n3] -= L;
+                              else if (dyFinal[i][n3] < -L/2) dyFinal[i][n3] += L;
 
-                              if      (dx2Site[i][n] >  L/2) dx2Site[i][n] -= L;
-                              else if (dx2Site[i][n] < -L/2) dx2Site[i][n] += L;
+                              if      (dxInter[i][n3] >  L/2) dxInter[i][n3] -= L;
+                              else if (dxInter[i][n3] < -L/2) dxInter[i][n3] += L;
 
-                              if      (dy2Site[i][n] >  L/2) dy2Site[i][n] -= L;
-                              else if (dy2Site[i][n] < -L/2) dy2Site[i][n] += L;
-
-
-                              if (fabs(dxFinal[i][n3]) > L/2) dxFinal[i][n3] = L - dxFinal[i][n3];
-                              if (fabs(dyFinal[i][n3]) > L/2) dyFinal[i][n3] = L - dyFinal[i][n3];
-
-                              if (fabs(dxInter[i][n3]) > L/2) dxInter[i][n3] = L - dxInter[i][n3];
-                              if (fabs(dyInter[i][n3]) > L/2) dyInter[i][n3] = L - dyInter[i][n3];
+                              if      (dyInter[i][n3] >  L/2) dyInter[i][n3] -= L;
+                              else if (dyInter[i][n3] < -L/2) dyInter[i][n3] += L;
 
                               area = 0.5*(dxInter[i][n3]*dyFinal[i][n3] - dxFinal[i][n3]*dyInter[i][n3]);
-//                              printf("jl_ij: %f, jl_ik: %f, area: %f\n", distanceMatrix[i][j], distanceMatrix[i][k], area);
-
 
                               overlap_jk = distanceMatrix[j][k];
                               overlap_3 = exp(-0.5*A*(overlap_ij + overlap_ik + overlap_jk));
+
                               gamma3 += overlap_3*(1 + Hz*area)/(tau1*t0);
-                              if (Hz*area > 1){
-                                  printf("Oops!!! jl_ij: %f, jl_ik: %f, area: %f\n", distanceMatrix[i][j], distanceMatrix[i][k], area);
-                                  printf("dx: %f, dy: %f, dxI %f, dyI %f\n", dxFinal[i][n3], dyFinal[i][n3], dxInter[i][n3], dyInter[i][n3]);
-                              }
+                              sum3 += Hz*area;
                               GammaT3Sites[i][n3] = gamma3;
                               inter3Site[i][n3] = k;
                               final3Site[i][n3] = j;
+
+                              sum += dyFinal[i][n3]*Hz*area;
+
                               n3++;
-                          }
+
+//                              if (Hz*area > 1){
+//                                  printf("Oops!!! jl_ij: %f, jl_ik: %f, area: %f\n", distanceMatrix[i][j], distanceMatrix[i][k], area);
+//                                  printf("dx: %f, dy: %f, dxI %f, dyI %f\n", dxFinal[i][n3], dyFinal[i][n3], dxInter[i][n3], dyInter[i][n3]);
+//                              }
+                          }}
                       }
                   }
               }
@@ -329,30 +323,27 @@ void MKcurrentRandPos::init(int D1, int L1, int N1, int maxJL1, double a1, doubl
                   n++;
               }
           }
+//          printf("i: %d, j: %d, n3: %d, sum3: %f\n", i, j, n3, sum3);
 
       }
-      sum += gamma;
-      sum3 += gamma3;
-      meanTotalGamma += gamma;
-      meanTotalGamma += gamma3;
       GammaTtot[i] = gamma; // Trenger sum for aa velge N, men gamma for aa velge jump??
-      GammaTtotForN[i] = sum;
-      GammaTtotForN3[i] = sum3;
       GammaTtot3Sites[i] = gamma3;
       totGammaT2tot += gamma;
       totGammaT3tot += gamma3;
-      prev = gamma;
+      GammaTtotForN[i] = totGammaT2tot;
+      GammaTtotForN3[i] = totGammaT3tot;
+      sum2 = sum/Nmem3Sites[i];
   }
-  meanTotalGamma /= N;
+  printf("<dy> = %f\n", sum2);
   abstotGammaTtot = totGammaT2tot + totGammaT3tot;
-  printf("Numbers: %f %f\n", GammaTtotForN[N-1], totGammaT2tot);
-
-  printf("meandx: %f, meandy: %f\n", meandx/(N*Nmem[500]), meandy/(N*Nmem[500]));
-
+  meanTotalGamma = abstotGammaTtot/ N;
 
   printf("Mean total 2 site rate: %.5f\n",totGammaT2tot/N);
   printf("Mean total 3 site rate: %.5f\n",totGammaT3tot/N);
   printf("Mean total rate: %.5f\n",abstotGammaTtot/N);
+
+  printf("Numbers: %f, %f, \n", totGammaT2tot, GammaTtotForN[N-1]);
+  printf("Numbers: %f, %f, \n", totGammaT3tot, GammaTtotForN3[N-1]);
 
 
 
@@ -453,7 +444,7 @@ void inline MKcurrentRandPos::getjump3sites(int &i, int &j, int &k, double &dx, 
         step = (h-l)/2;
       }
       tries++;
-      occu = es->getocci(i);
+      occu = es->getocci(h);
   }
   i = h;
 
@@ -463,7 +454,7 @@ void inline MKcurrentRandPos::getjump3sites(int &i, int &j, int &k, double &dx, 
 //  printf("i: %d\n", i);
 //  printf("tries: %d\n", tries);
 
-  r2 = RanGen->Random()*totGammaT3tot;
+  r2 = RanGen->Random()*GammaTtot3Sites[i];
   l = -1;
   h = Nmem3Sites[i]-1;
   step = Nmem3Sites[i]/2;
@@ -568,8 +559,9 @@ bool inline MKcurrentRandPos::testjump3sites(int i, int j, int k, double dx, dou
     else dEik = exp(-beta*dEik);
 
     rate = dEjk*dEik + dEij*dEjk + dEij*dEik;
-//    printf("Are these equal? %.4f and %.4f\n", dEij*dEjk, exp(-beta*(es->hoppEdiffij(i,j) + es->hoppEdiffij(j,k) + dx*Ex)));
+//    meanSomething += rate;
     r2 = es->ran2(0);
+//    printf("Rate: %f\n", rate);
     return (r2 < rate/3);
   }
 
@@ -625,8 +617,8 @@ void MKcurrentRandPos::runCurrent(int steps,double &E, double &t)
   meandy = 0;
   meandxI = 0;
   meandyI = 0;
-  testedNumberOf2Site = 0;
-  testedNumberOf3Site = 0;
+  testedNumberOf2Site = 1;
+  testedNumberOf3Site = 1;
   numberOf2Site = 0;
   numberOf3Site = 0;
   double zeroAreaCounter = 0;
@@ -645,27 +637,29 @@ void MKcurrentRandPos::runCurrent(int steps,double &E, double &t)
       {
               MCs++;
               if ((es->ran2(0))<prob2Site){
-                dxI = 0;
-                dyI = 0;
-                testedNumberOf2Site++;
+//                dxI = 0;
+//                dyI = 0;
+//                testedNumberOf2Site++;
                 getjump(i,j,dx,dy);
-                k = i;
-                jump=testjump(i,j,dx,dy);
+//                k = i;
+                jump=testjump(i,j,dx,dy);/*
                 jumpNumber = 11;
                 meanAbsdx +=dx; meanAbsdy +=dy;
                 if (jump == true) numberOf2Site++;// printf("dx: %8.5f, dy: %8.5f\n", dx, dy);}
-                else meanDiscdx += dx; meanDiscdy += dy;// printf("dx: %8.5f, dy: %8.5f\n", dx, dy);
+                else meanDiscdx += dx; meanDiscdy += dy;// printf("dx: %8.5f, dy: %8.5f\n", dx, dy);*/
               }
               else{
-                testedNumberOf3Site++;
+//                printf("Startin 3 site jump\n");
+//                testedNumberOf3Site++;
                 getjump3sites(i,j,k,dx,dy,dxI,dyI, jumpNumber);
-                jump=testjump3sites(i,j,k,dx,dy,dxI,dyI);
+                jump=testjump3sites(i,j,k,dx,dy,dxI,dyI);/*
                 meanAbsdx +=dx; meanAbsdy +=dy;
                 if (jump == true) {numberOf3Site++;}// printf("i: %d, k: %d, j: %d, jl_ij: %f, jl_ik: %f \n", i,k,j,distanceMatrix[i][j],distanceMatrix[i][k]);}
-                else meanDiscdx += dx; meanDiscdy += dy;
+                else meanDiscdx += dx; meanDiscdy += dy;*/
 
               }
       }
+//      printf("Tested: %d, number: %d\n", testedNumberOf3Site, numberOf3Site );
 //      updateMap();
 //      updateMovement(i,j);
 
@@ -678,15 +672,15 @@ void MKcurrentRandPos::runCurrent(int steps,double &E, double &t)
 //      meanArea += jumpArea[i][jumpNumber];
 //      if (jumpArea[i][jumpNumber] == 0) zeroAreaCounter++;
 
-      meanJumpLength += distanceMatrix[i][j];
-      meanInterJumpLength += distanceMatrix[i][k];
-      meandx += dx;
-      meandy += dy;
-      meandxI += dxI;
-      meandyI += dyI;
+//      meanJumpLength += distanceMatrix[i][j];
+//      meanInterJumpLength += distanceMatrix[i][k];
+//      meandx += dx;
+//      meandy += dy;
+//      meandxI += dxI;
+//      meandyI += dyI;
 
-      meanMCs += MCs;
-      actualmeanMCs += MCs;
+//      meanMCs += MCs;
+//      actualmeanMCs += MCs;
 
 
       from[s] = i;
@@ -700,8 +694,8 @@ void MKcurrentRandPos::runCurrent(int steps,double &E, double &t)
 
       MCsteps[s]=MCs;
       if (s%10000==0) {
-          printf("%6d E=%le MCs=%f\n",s,E,actualmeanMCs/10000);
-          actualmeanMCs =0;
+          printf("%6d E=%le MCs=%d\n",s,E,MCs);
+//          actualmeanMCs =0;
       }
 
     }
@@ -723,8 +717,8 @@ void MKcurrentRandPos::runCurrent(int steps,double &E, double &t)
   printf("\nMean area:                 %f\n", meanArea);
   printf("\nMean jump length:              %f\n", meanJumpLength);
   printf("Mean intermediate jump length: %f\n\n", meanInterJumpLength);
-  printf("Proposed  dx: %8.5f,  Proposed  dy: %8.5f\n", meanAbsdx /testedNumberOf2Site,  meanAbsdy /testedNumberOf2Site);
-  printf("Discarded dx: %8.5f,  Discarded dy: %8.5f\n", meanDiscdx /testedNumberOf2Site,  meanDiscdy /testedNumberOf2Site);
+  printf("Proposed  dx: %8.5f,  Proposed  dy: %8.5f\n", meanAbsdx /(testedNumberOf2Site + testedNumberOf3Site),  meanAbsdy /(testedNumberOf2Site + testedNumberOf3Site));
+  printf("Discarded dx: %8.5f,  Discarded dy: %8.5f\n", meanDiscdx /(numberOf2Site + numberOf3Site - testedNumberOf2Site - testedNumberOf3Site),  meanDiscdy /(numberOf2Site + numberOf3Site - testedNumberOf2Site - testedNumberOf3Site));
   printf("Mean dx:      %8.5f,  Mean dy:      %8.5f\n", meandx, meandy);
   printf("Mean dxI:     %8.5f,  Mean dyI:     %8.5f\n\n", meandxI, meandyI);
   printf("Acceptance ratio for 2 site: %.3f, 3 site: %.3f\n", double(numberOf2Site)/testedNumberOf2Site, double(numberOf3Site)/testedNumberOf3Site);

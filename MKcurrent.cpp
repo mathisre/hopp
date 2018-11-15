@@ -188,6 +188,7 @@ void MKcurrent::init(int D1, int L1, int N1, int maxJL1, double a1, double beta1
       gamma = 0.0;
       n = 0;
       flux = 5*pow(10,-3);//pow(10,-15);// 0.3*pow(10,-9)*2.06*pow(10,-15);
+      double sum=0;
 
       // dx, dy is for intermediate site, dx2, dy2 final site
       if (doTriJumps == true)
@@ -211,6 +212,7 @@ void MKcurrent::init(int D1, int L1, int N1, int maxJL1, double a1, double beta1
 
                                   gamma += overlap_3*(1 +  Bz*area)/(tau1*t0);
 
+                                  sum += dy*Hz*area;
 
 //                                  overlap_ik = -A*jl[(dx2+maxJL) + JL2*(dy2+maxJL)];
 //                                  overlap_jk = -A*jlInterFinalSite;
@@ -245,6 +247,7 @@ void MKcurrent::init(int D1, int L1, int N1, int maxJL1, double a1, double beta1
         }
       }
 
+      printf("<dy> = %f\n", sum/Nmem3Sites);
       nGamma3Sites = n;
       GammaTtot3Sites = gamma;
       totGammaTtot = GammaTtot + GammaTtot3Sites;
@@ -510,6 +513,7 @@ void MKcurrent::runCurrent(int steps,double &E, double &t)
   double dE,dt;
   bool jump;
   double prob2Site = GammaTtot/totGammaTtot;
+  prob2Site = 0;
 
 //  if(ratefun == 0)
     tMC = 1/(               N * es->nu() * totGammaTtot);
@@ -547,12 +551,11 @@ void MKcurrent::runCurrent(int steps,double &E, double &t)
       {
               MCs++;
               if ((es->ran2(0))<prob2Site){
-                dxI = 0;
-                dyI = 0;
+                jumpNumber = 11; dxI = 0; dyI = 0;
                 testedNumberOf2Site++;
                 getjump(i,j,dx,dy);
                 jump=testjump(i,j,dx,dy);
-                jumpNumber = 11;
+
                 meanAbsdx +=dx; meanAbsdy +=dy;
                 if (jump == true) numberOf2Site++;
                 else meanDiscdx += dx; meanDiscdy += dy;
@@ -596,8 +599,9 @@ void MKcurrent::runCurrent(int steps,double &E, double &t)
       dys[s] = dy;
 
       MCsteps[s]=MCs;
-      if (s%10000==0) {
-          printf("%6d E=%le MCs=%f\n",s,E,actualmeanMCs/10000);
+      if (s%100==0) {
+          printf("%6d E=%le MCs=%f, 2 site acc: %8.5f, 3 site acc: %8.5f\n",s,E,actualmeanMCs/100,
+                 double(numberOf2Site)/testedNumberOf2Site, double(numberOf3Site)/testedNumberOf3Site);
           actualmeanMCs =0;
       }
  

@@ -37,6 +37,6 @@ for i in range(0,n):
 		seed = np.random.randint(10**7)
 		seedconfig = np.random.randint(10**7)
 		seedstate = np.random.randint(10**7)
-		statement = "./glatzprogram outpre=%s%d_ Nt=%d Ex=%.7f Hz=%.7f T=%.7f seed2=%d rsconfig=%d rsstate=%d screen=0.5 fill=%.4f L=%d triJumps=0" % (directory,i,Nt,Ex,Hz,T,seed,seedconfig,seedstate,fill,L)
+		statement = "./glatzprogram outpre=%s%d_ Nt=%d Ex=%.7f Hz=%.7f T=%.7f seed2=%d rsconfig=%d rsstate=%d screen=0.5 fill=%.4f L=%d" % (directory,i,Nt,Ex,Hz,T,seed,seedconfig,seedstate,fill,L)
 		print(statement)
 		os.system(statement)
