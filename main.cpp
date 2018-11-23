@@ -33,11 +33,12 @@ int main(int argc, char* argv[])
   auto start = std::chrono::system_clock::now();
   switch (p->ctype) {
          case 1: runSimul.runCurrent(p);              break;
-         case 2: runSimul.runCurrentTrace(p);         break;
+         case 2: runSimul.runCurrentMeasure(p);       break;
          case 3: runSimul.runCurrentHeatMap(p);       break;
          case 4: runSimul.runCurrentStateFile(p);     break;
          case 5: runSimul.runCurrentStateSpesFile(p); break;
          case 6: runSimul.runCurrentRandPos(p);       break;
+         case 7: runSimul.runCurrentTrace(p);         break;
   }
   delete p;
   //int a;scanf("%d",a);

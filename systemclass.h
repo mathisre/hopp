@@ -77,7 +77,7 @@ public:
             rM=((int) r); if(rM==L/2) rM--; //sometimes the distance between two given points needs to be calculated -> rmax=L/2 !!!
             rmax=rM+0.5;rmaxi=1.0/r;}        //if rM=L/2 distorted grid distances might not be unique!
     void setU(double du) {U=du;}
-    void setT(double temp) {T=temp; printf("T set to %f\n", T);}
+    void setT(double temp) {T=temp;}
     void setE(double ext,bool xpc=true) {E=ext;xpbc=xpc;}
 	double *getdisptr() {return dis;}
 	double *getseptr() {return siteen;}

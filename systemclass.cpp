@@ -1674,8 +1674,9 @@ void ESystem::spestofile(string filename)
   for (i=0;i<N;i++){
       st = FloatToStr(spe[i]);
 
-      if ((i+1)%L == 0) st += "\n";
-      else st += "\t";
+//      if ((i+1)%L == 0)
+        st += "\n";
+//      else st += "\t";
       FileWrite(f, st.c_str(), st.length());
     }
   FileClose(f);

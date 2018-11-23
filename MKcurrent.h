@@ -33,6 +33,7 @@ public:
 	void setRatefun(int ratefun1);
 
     void runCurrent(int steps, double &E, double &t);
+    void runCurrentMeasure(int steps, double &E, double &t);
     void runCurrentTrace(int steps, double &E, double &t, string filename);
 	void runCurrentAC(int steps, double &E, double &t, int &dx);
 
@@ -53,6 +54,8 @@ public:
     void updatePositions(int i, int j,int dx, int dy);
     void writePositions(string filename, int s);
     void closePositions(FILE* f);
+    void sample3SiteJumps(int steps);
+    void sample2SiteJumps(int steps);
 
 
 
@@ -88,8 +91,7 @@ private:
 	int *to;
 	double *energy,*ts,*des;
 	int *MCsteps;
-	int *dxs;
-    int *dys;
+    int *dxs, *dxIs, *dys, *dyIs;
 
 
     double Ex, Ey, Ez, E0x, E0y, E0z, Hx, Hy, Hz;

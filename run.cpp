@@ -187,7 +187,7 @@ void run::runCurrent(class params *p) //2D only so far!!!
     fflush(stdout);
 
     MKcurr->jumpsToFileSmall(p->outputprefix + "jumps_" + p->outputendfix + "_run_" + IntToStr(run) + ".dat",steps);
-    MKcurr->heatMapToFile(   p->outputprefix + "map_" + p->outputendfix + "_run_" + IntToStr(run) + ".dat",steps);
+//    MKcurr->heatMapToFile(   p->outputprefix + "map_" + p->outputendfix + "_run_" + IntToStr(run) + ".dat",steps);
 
 //    MKcurr->normalizeMap(MKcurr->positions, steps);
 //    MKcurr->normalizeMap(MKcurr->movement, steps);
@@ -197,8 +197,111 @@ void run::runCurrent(class params *p) //2D only so far!!!
 
 //    MKcurr->currentToFile(p->outputprefix+"r"+IntToStr(run)+"curr.dat",steps);
 //    es->nstofile(   p->outputprefix + "final_config_" + p->outputendfix + "_run_" + IntToStr(run) +".dat");
-//    es->spestofile( p->outputprefix + "SPE_" + p->outputendfix + "_run_" + IntToStr(run) +".dat");
-    es->movedtofile(p->outputprefix + "moved_particles_" + p->outputendfix + "_run_" + IntToStr(run) +".dat");
+    es->spestofile( p->outputprefix + "SPE_" + p->outputendfix + "_run_" + IntToStr(run) +".dat");
+//    es->movedtofile(p->outputprefix + "moved_particles_" + p->outputendfix + "_run_" + IntToStr(run) +".dat");
+    printf("Etter fil\n");
+  }
+ delete esc;
+ delete es;
+ delete MKcurr;
+}
+
+
+void run::runCurrentMeasure(class params *p) //2D only so far!!!
+{
+//  setlocale(LC_ALL,"");
+
+    //Hva er es?, hva gjør cgcontrol?
+//  printf("Running current\n");
+
+  ESystem *es;
+  CGcontrol *esc;
+  MKcurrent *MKcurr;
+  string st;
+
+  double  Ex, Ey, Ez, energy,t, Hx, Hy, Hz; // mc,
+  int L, D, N, steps, run, runs; //, im, i, s, f
+
+  printf("\n-----Setting up system-----\n\n");
+
+  steps = p->timesteps;
+  D = p->dim;
+  L = p->len;
+  N = L*L;
+  Ex = p->Ex; Ey = p->Ey; Ez = p->Ez;
+  Hx = p->Hx; Hy = p->Hy; Hz = p->Hz;
+
+  es = new ESystem(L,D,p->fill,p->rsconfig); // Her skjer det mye !
+  es->setrmax(p->screen); // -1.0
+  es->setU(p->disU); // 1.0
+  es->setT(p->temp);
+
+  es->ran2(p->rsstate); //reset random seed, so initial config and state are independent
+  // What is "state"?
+
+  esc = new CGcontrol(); //class for analysis of the systemclass
+  esc->setES(es);
+
+  es->reconfig(p->istate); //creates a new (random) initial state
+  es->setSPE(true); // ??
+
+  energy = es->calcenergy();
+//  printf("Energy: %le\n",energy);
+
+//  printES(es);  // Prints map of initial state (electrons and empty sites)
+
+  MKcurr = new MKcurrent(steps);
+
+  MKcurr->setE(Ex, Ey, Ez);
+  MKcurr->setH(Hx, Hy, Hz);
+  printf("E set to [%le %le %le]\n",Ex,Ey,Ez);
+  printf("H set to [%le %le %le]\n",Hx,Hy,Hz);
+  fflush(stdout);
+
+  // maxJL = 5 from param. maxJL = max jump length? MKCurr has both maxJL1 and maxJL2 = 2*maxJL1 +1
+  // loc = 3 from param, maxprobability is also 3. JL = Jump Length?
+  MKcurr->init(D, L, N, p->maxJL, p->loc, 1.0/p->temp,p->maxProbability, p->Hz, p->doTriJumps); // <- calculates rates
+  MKcurr->setES(es);
+  MKcurr->setWritelines(p->writelines);
+  MKcurr->setRatefun(p->ratefun); //
+
+
+  MKcurr->setMTseed(p->seed2); // seed for MT RanGen to be used in getJump, this one uses Mersenne
+  printf("MKcurrent initialized\n");
+  printf("Doing %d timesteps\n", steps);
+//  fflush(stdout);
+  MKcurr->writeGammaToFile(p->Hz);
+
+  // set seed for current:
+  es->ran2(p->seed2); // again? Why?
+
+  run = 0; runs = p->runs;
+  t = 0;
+  printf("\n-------Starting timesteps2---------\n\n");
+  for (run = 0; run < runs; run++)
+  {
+    MKcurr->runCurrentMeasure(steps, energy, t);
+
+    printf("\n-------Finished with run %d--------\n\n", run);
+
+    MKcurr->sample3SiteJumps(steps);
+    MKcurr->sample2SiteJumps(steps);
+    printf("For fil\n");
+    fflush(stdout);
+
+    MKcurr->jumpsToFileSmall(p->outputprefix + "jumps_" + p->outputendfix + "_run_" + IntToStr(run) + ".dat",steps);
+//    MKcurr->heatMapToFile(   p->outputprefix + "map_" + p->outputendfix + "_run_" + IntToStr(run) + ".dat",steps);
+
+//    MKcurr->normalizeMap(MKcurr->positions, steps);
+//    MKcurr->normalizeMap(MKcurr->movement, steps);
+//    MKcurr->writeMapToFile(MKcurr->positions, L, p->outputprefix  + "electronMap_" + p->outputendfix + "_run_" + IntToStr(run) + ".dat");
+//    MKcurr->writeMapToFile(MKcurr->movement, L,  p->outputprefix  + "electronMovement_" + p->outputendfix + "_run_" + IntToStr(run) + ".dat");
+    fflush(stdout);
+
+//    MKcurr->currentToFile(p->outputprefix+"r"+IntToStr(run)+"curr.dat",steps);
+//    es->nstofile(   p->outputprefix + "final_config_" + p->outputendfix + "_run_" + IntToStr(run) +".dat");
+    es->spestofile( p->outputprefix + "SPE_" + p->outputendfix + "_run_" + IntToStr(run) +".dat");
+//    es->movedtofile(p->outputprefix + "moved_particles_" + p->outputendfix + "_run_" + IntToStr(run) +".dat");
     printf("Etter fil\n");
   }
  delete esc;

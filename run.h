@@ -27,6 +27,7 @@ public:
     void printES(ESystem *es);
 
     void runCurrent(class params *p);
+    void runCurrentMeasure(class params *p);
     void runCurrentRandPos(class params *p);
     void runCurrentTrace(class params *p);
     void runCurrentHeatMap(params *p);

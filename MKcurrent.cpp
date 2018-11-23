@@ -21,6 +21,8 @@ MKcurrent::MKcurrent(int steps)
   MCsteps = new int[steps];
   dxs = new int[steps];
   dys = new int[steps];
+  dxIs = new int[steps];
+  dyIs = new int[steps];
   ts = new double[steps];
   des = new double[steps];
 }
@@ -36,6 +38,8 @@ MKcurrent::~MKcurrent()
   if (MCsteps!=nullptr) delete[] MCsteps;
   if (dxs!=nullptr) delete[] dxs;
   if (dys!=nullptr) delete[] dys;
+  if (dxIs!=nullptr) delete[] dxIs;
+  if (dyIs!=nullptr) delete[] dyIs;
   if (ts!=nullptr) delete[] ts;
   if (des!=nullptr) delete[] des;
   if (dxInter!=nullptr) delete[] dxInter;
@@ -138,45 +142,11 @@ void MKcurrent::init(int D1, int L1, int N1, int maxJL1, double a1, double beta1
 //        std::cout << GammaT[n] - GammaT[n-1] << std::endl;
       }
       GammaTtot = gamma;
-      printf("Gamma before: %f \n", GammaTtot);
 
       // 3 sites rates
       Nmem3Sites = 14280;//(JL2-1)*(JL2-1)*(JL2-2)*(JL2-2); // Hvorfor?
 
 
-
-//      // dx, dy is for intermediate site, dx2, dy2 final site
-//      if (doTriJumps == true)
-//      for (dx = -maxJL; dx < maxJL + 1; dx++){
-//          for (dy = -maxJL; dy < maxJL + 1; dy++){
-//              if( (dx != 0 || dy !=0)) {
-//                  gamma += exp(-A*sqrt(dx*dx + dy*dy))/tau1;
-//                  for (dx2 = -maxJL; dx2 < maxJL + 1; dx2++){
-//                      for (dy2 = -maxJL; dy2 < maxJL + 1; dy2++){
-//                          if ( (dx2 != 0 || dy2 !=0) ){
-//                              if (dx != dx2 || dy != dy2){
-
-//                                  area = 0.5*(dx*dy2 - dx2*dy);
-
-//                                  jlInterFinalSite = sqrt((dx-dx2)*(dx-dx2) + (dy-dy2)*(dy-dy2));
-//                                  overlap_ij =  sqrt(dx*dx + dy*dy);
-//                                  overlap_ik =  sqrt(dx2*dx2 + dy2*dy2);
-//                                  overlap_3 = exp(-0.5*A*(overlap_ij + overlap_ik + jlInterFinalSite ));
-
-//                                  gamma += overlap_3*(Bz*area)/(tau1*t0);
-
-//                                  GammaT[n] = gamma;
-//                                  n++;
-//                              }
-//                          }
-//                      }
-//                  }
-//              }
-//          }
-//      }
-      GammaTtot = gamma;
-
-      printf("Gamma after: %f \n", GammaTtot);
       GammaT3Sites = new double[Nmem3Sites];
 
       jumpArea = new double[Nmem3Sites];
@@ -212,7 +182,16 @@ void MKcurrent::init(int D1, int L1, int N1, int maxJL1, double a1, double beta1
 
                                   gamma += overlap_3*(1 +  Bz*area)/(tau1*t0);
 
-                                  sum += dy*Hz*area;
+                                  GammaT3Sites[n] = gamma;
+
+                                  jumpArea[n] = area;
+                                  dxInter[n] = dx;
+                                  dyInter[n] = dy;
+                                  dxFinal[n] = dx2;
+                                  dyFinal[n] = dy2;
+                                  n++;
+
+//                                  sum += dy*Hz*area;
 
 //                                  overlap_ik = -A*jl[(dx2+maxJL) + JL2*(dy2+maxJL)];
 //                                  overlap_jk = -A*jlInterFinalSite;
@@ -223,22 +202,9 @@ void MKcurrent::init(int D1, int L1, int N1, int maxJL1, double a1, double beta1
 //                                          tau1*exp(-A*(overlap_ij+overlap_ik)) + overlap_3 * Bz*area/flux;
 //                                  gamma += tau1*exp(-A*(overlap_ij+overlap_ij)) + overlap_3 * Bz*area/flux;
 //                                  gamma += overlap_3 * (20+Bz*area)/flux;
-//                                  cout << gamma << endl;
-                                  GammaT3Sites[n] = gamma;
-
-                                  jumpArea[n] = area;
-                                  dxInter[n] = dx;
-                                  dyInter[n] = dy;
-                                  dxFinal[n] = dx2;
-                                  dyFinal[n] = dy2;
-                                  n++;
-
-                                  // dx kan vere 0, men ikke samtidig som dy. Samme med dx1 og dy1
-                                  // 10^2 dx og hver har dy har 11 muligheter
 
 
 
-                              // Why += ? I get why we need total sum, but shouldn't GammaT3Sites[0] and GammaT3Sites[1000] not be dependent on their positions in the loop?
                            }
                         }
                   }
@@ -247,7 +213,6 @@ void MKcurrent::init(int D1, int L1, int N1, int maxJL1, double a1, double beta1
         }
       }
 
-      printf("<dy> = %f\n", sum/Nmem3Sites);
       nGamma3Sites = n;
       GammaTtot3Sites = gamma;
       totGammaTtot = GammaTtot + GammaTtot3Sites;
@@ -347,8 +312,6 @@ void inline MKcurrent::getjump3sites(int &i, int &j, int &k, int &dx, int &dy, i
     i = RanGen->IRandom(0,N-1);
   }
 
-
-
   r2 = RanGen->Random()*GammaTtot3Sites;
   l = -1;
   h = Nmem3Sites-1;
@@ -375,7 +338,7 @@ void inline MKcurrent::getjump3sites(int &i, int &j, int &k, int &dx, int &dy, i
   x2 = x+dx; if (x2 >= L) x2 -= L; else if (x2 < 0) x2 += L;
   y2 = y+dy; if (y2 >= L) y2 -= L; else if (y2 < 0) y2 += L;
 
-  j = x2 + y2 * L; // j er end position
+  j = x2 + y2 * L; // end position
 
   dxI = dxInter[h];
   dyI = dyInter[h];
@@ -455,7 +418,7 @@ bool inline MKcurrent::testjump3sites(int i, int j, int k, int dx, int dy, int d
 
   dEij = es->hoppEdiffij(i,j) + dx*Ex + dy*Ey;
   dEik = es->hoppEdiffij(i,k) + dxI*Ex + dyI*Ey;
-  dEjk = es->hoppEdiffij(j,k) + (dx+dxI)*Ex + (dy+dyI)*Ey;
+  dEjk = es->hoppEdiffij(j,k) + (dx-dxI)*Ex + (dy-dyI)*Ey;
 
   dE2 = dEij + dx*Ex + dy*Ey;
   exponent = beta*dE2;
@@ -513,7 +476,6 @@ void MKcurrent::runCurrent(int steps,double &E, double &t)
   double dE,dt;
   bool jump;
   double prob2Site = GammaTtot/totGammaTtot;
-  prob2Site = 0;
 
 //  if(ratefun == 0)
     tMC = 1/(               N * es->nu() * totGammaTtot);
@@ -537,12 +499,6 @@ void MKcurrent::runCurrent(int steps,double &E, double &t)
 
   meanSomething = 0;
 
-
-  double meanDiscdx = 0, meanDiscdy = 0;
-  double meanAbsdx = 0, meanAbsdy = 0;
-
-  double meanMCs = 0;
-  double actualmeanMCs = 0;
   for (s = 0; s < steps; s++)
   {
       MCs = 0;
@@ -555,16 +511,138 @@ void MKcurrent::runCurrent(int steps,double &E, double &t)
                 testedNumberOf2Site++;
                 getjump(i,j,dx,dy);
                 jump=testjump(i,j,dx,dy);
+              }
+
+              else{
+                getjump3sites(i,j,k,dx,dy,dxI,dyI, jumpNumber);
+                jump=testjump3sites(i,j,k,dx,dy,dxI,dyI);
+              }
+      }
+      dE = es->hopp(i,-1,0,j,0,0);
+
+      dt = MCs*tMC;
+      E += dE;
+      t += dt;
+
+      from[s] = i;
+      to[s]   = j;
+
+      ts[s] = t;
+      energy[s] = E;
+      des[s] = dE;
+      dxs[s] = dx;
+      dys[s] = dy;
+      MCsteps[s]=MCs;
+
+      if (s%100000==0) {
+          printf("%6d E=%le MCs=%d\n",s,E,MCs);
+      }
+
+    }
+  printf("\n-------Finishing timesteps--------\n\n");
+
+//  printf("2 site %d, 3 site %d\n",numberOf2Site,numberOf3Site);
+//  printf("Tested 2 site %d, tested 3 site %d\n",testedNumberOf2Site,testedNumberOf3Site);
+
+}
+
+void MKcurrent::runCurrentMeasure(int steps,double &E, double &t)
+{
+
+  int s, MCs, i=0, j=0, dx=0, dy=0, jumpNumber = 0;
+  int k, dxI=0, dyI=0;
+  double dE,dt;
+  bool jump;
+  double prob2Site = GammaTtot/totGammaTtot;
+
+//  if(ratefun == 0)
+    tMC = 1/(               N * es->nu() * totGammaTtot);
+//  else
+//    tMC = 1/(maxProbability*N * es->nu() * GammaTtot);
+  // maxprobability er 3 (maxprob fra params) * beta
+
+  meanArea = 0;
+
+  meanJumpLength = 0;
+  meanInterJumpLength = 0;
+  meandx = 0;
+  meandy = 0;
+  meandxI = 0;
+  meandyI = 0;
+  testedNumberOf2Site = 0;
+  testedNumberOf3Site = 0;
+  numberOf2Site = 0;
+  numberOf3Site = 0;
+  double zeroAreaCounter = 0;
+
+  meanSomething = 0;
+
+  double meanInterFinalJumpLength = 0;
+
+
+  double meanDiscdx = 0, meanDiscdy = 0;
+  double meanAbsdx = 0, meanAbsdy = 0;
+
+  double meanMCs = 0;
+  double actualmeanMCs = 0;
+
+
+  double dy3 = 0;
+  double dx3 = 0;
+  double dy2 = 0;
+  double dx2 = 0;
+
+  double meanJumpLength3 = 0;
+  double meanJumpLength2 = 0;
+
+  for (s = 0; s < steps; s++)
+  {
+      MCs = 0;
+      jump = false;
+      while (!jump)
+      {
+              MCs++;
+              if ((es->ran2(0))<prob2Site){
+                testedNumberOf2Site++;
+                getjump(i,j,dx,dy);
+                jump=testjump(i,j,dx,dy);
 
                 meanAbsdx +=dx; meanAbsdy +=dy;
-                if (jump == true) numberOf2Site++;
+                if (jump == true) {
+                    dxI = 0; dyI = 0;
+                    numberOf2Site++;
+                    meanJumpLength2 += jl[(dx+maxJL) + JL2*(dy+maxJL)];
+                    dx2 += dx;
+                    dy2 += dy;
+                }
                 else meanDiscdx += dx; meanDiscdy += dy;
               }
               else{
                 testedNumberOf3Site++;
                 getjump3sites(i,j,k,dx,dy,dxI,dyI, jumpNumber);
                 jump=testjump3sites(i,j,k,dx,dy,dxI,dyI);
-                if (jump == true) numberOf3Site++;
+                meanAbsdx += dx; meanAbsdy += dy;
+
+
+
+
+                if (jump == true) {
+                    meanInterFinalJumpLength += sqrt((dx-dxI)*(dx-dxI) + (dy-dyI)*(dy-dyI));
+
+                    if (jumpArea[jumpNumber] == 0) zeroAreaCounter++;
+                    else meanArea += fabs(jumpArea[jumpNumber]);
+
+                    meanJumpLength3 += jl[(dx+maxJL) + JL2*(dy+maxJL)];
+
+                    meanInterJumpLength += jl[(dxI+maxJL) + JL2*(dyI+maxJL)];
+                    dx3 += dx;
+                    dy3 += dy;
+
+                    numberOf3Site++;
+                     }
+                else {
+                    meanDiscdx += dx; meanDiscdy += dy;
+                }
               }
       }
 //      updateMap();
@@ -577,13 +655,10 @@ void MKcurrent::runCurrent(int steps,double &E, double &t)
       t += dt;
       meanMCs += MCs;
 
-      meanArea += jumpArea[jumpNumber];
-      if (jumpArea[jumpNumber] == 0) zeroAreaCounter++;
 
-      meanJumpLength += sqrt(dx*dx+dy*dy);
-      meanInterJumpLength += sqrt(dxI*dxI+dyI*dyI);
-      meandx += dx;
-      meandy += dy;
+      meanJumpLength      += jl[(dx+maxJL) + JL2*(dy+maxJL)];
+      meandx  += dx;
+      meandy  += dy;
       meandxI += dxI;
       meandyI += dyI;
 
@@ -597,42 +672,50 @@ void MKcurrent::runCurrent(int steps,double &E, double &t)
       des[s] = dE;
       dxs[s] = dx;
       dys[s] = dy;
-
+      dxIs[s] = dxI;
+      dyIs[s] = dyI;
       MCsteps[s]=MCs;
-      if (s%100==0) {
-          printf("%6d E=%le MCs=%f, 2 site acc: %8.5f, 3 site acc: %8.5f\n",s,E,actualmeanMCs/100,
-                 double(numberOf2Site)/testedNumberOf2Site, double(numberOf3Site)/testedNumberOf3Site);
+
+      if (s%100000==0) {
+          printf("%6d E=%le MCs=%.3f\n",s,E,actualmeanMCs/100000);
           actualmeanMCs =0;
       }
- 
+
      // printf("Step: %d: %d %d dE: %le I:%le MCs: %d\n", s, i, j,energy[s],dx,MCsteps[s]);
     }
   printf("\n-------Finishing timesteps--------\n\n");
   if (numberOf3Site == 0) numberOf3Site=1;
+  printf("Number of 3 site jumps tested   : %d\n", testedNumberOf3Site);
+  printf("Number of 3 site jumps performed: %d\n", numberOf3Site);
+
+  printf("Mean 2-site dx: %f, dy: %f\n", dx2/numberOf2Site, dy2/numberOf2Site);
+  printf("Mean 3-site dx: %f, dy: %f\n", dx3/numberOf3Site, dy3/numberOf3Site);
+
 
   printf("Mean dE: %f \n", meanSomething/testedNumberOf2Site);
   meanJumpLength /= steps;
-  meanInterJumpLength /= numberOf3Site;
-  meanArea /= numberOf3Site;
+  meanJumpLength3 /= numberOf3Site;
+  meanJumpLength2 /= numberOf2Site;
+  meanInterJumpLength /= numberOf3Site; // numberOf3Site;
+  meanInterFinalJumpLength /= numberOf3Site; // numberOf3Site;
+  meanArea /= numberOf3Site-zeroAreaCounter;
   zeroAreaCounter /= numberOf3Site;
-  zeroAreaCounter -= numberOf2Site/numberOf3Site;
   meandx /= steps;
   meandy /= steps;
   meandxI /= steps;
   meandyI /= steps;
 
-  printf("\n Discarded dx:  %f", meanDiscdx/testedNumberOf2Site);
-  printf("\n Discarded dy:  %f", meanDiscdy/testedNumberOf2Site);
-  printf("\n Proposed dx's: %f", meanAbsdx /testedNumberOf2Site);
-  printf("\n Proposed dy's: %f", meanAbsdy /testedNumberOf2Site);
+  printf("\nProposed  dx: %8.5f, dy:  %8.5f\n", meanAbsdx /testedNumberOf2Site, meanAbsdy /testedNumberOf2Site);
+  printf("Discarded dx: %8.5f, dy:  %8.5f\n", meanDiscdx/testedNumberOf2Site, meanDiscdy/testedNumberOf2Site);
+  printf("Mean dx:      %8.5f, dy:  %8.5f\n", meandx, meandy);
+  printf("Mean dxI:     %8.5f, dyI: %8.5f\n", meandxI, meandyI);
+  printf("\nMean jump length:                    %8.5f\n", meanJumpLength);
+  printf("Mean intermediate jump length:       %8.5f\n", meanInterJumpLength);
+  printf("Mean intermediate-final jump length: %8.5f\n", meanInterFinalJumpLength);
+  printf("Mean jump length, only 2 site:       %8.5f\n", meanJumpLength2);
+  printf("Mean jump length, only 3 site:       %8.5f\n", meanJumpLength3);
   printf("\nPercentage zero area:      %f\n", zeroAreaCounter);
-  printf("\nMean area:                 %f\n", meanArea);
-  printf("\nMean jump length:              %f\n", meanJumpLength);
-  printf("Mean intermediate jump length: %f\n", meanInterJumpLength);
-  printf("Mean dx:  %8.5f\n", meandx);
-  printf("Mean dxI: %8.5f\n", meandxI);
-  printf("Mean dy:  %8.5f\n", meandy);
-  printf("Mean dyI: %8.5f\n", meandyI);
+  printf("Mean area:                 %f\n", meanArea);
   printf("Acceptance ratio for 2 site: %.3f, 3 site: %.3f\n", double(numberOf2Site)/testedNumberOf2Site, double(numberOf3Site)/testedNumberOf3Site);
   printf("Percentage number of 3 site jumps: %f\n", double(numberOf3Site)/(numberOf2Site+numberOf3Site));
 
@@ -979,3 +1062,176 @@ void MKcurrent::writeGamma2SiteToFile(double Hz)
     }
     FileClose(g);
 }
+
+void MKcurrent::sample3SiteJumps(int steps)
+{
+    int s, i,j,iI,jI;
+    double **jumps,**counter, **tracerSum;
+
+    int L=3;
+    // Tracer tracks what intermediate jump went to what final site
+    // tracer[1][2][1][3] is how many of the jumps to (2,1) came through (3,1)
+    jumps = new double*[2*L+1];
+    counter = new double*[2*L+1];
+    tracerSum = new double*[2*L+1];
+
+    for (i = 0; i < 2*L+1; i++) {
+        jumps[i] = new double[2*L+1];
+        counter[i] = new double[2*L+1];
+        tracerSum[i] = new double[2*L+1];
+
+
+
+    }
+    double *tracer = (double*)calloc( (2*L+1) * (2*L+1)* (2*L+1)* (2*L+1),sizeof(double));
+
+    for (s=0; s < steps; s++){
+        if (dxIs[s] != 0 || dyIs[s] != 0){ // If we did 3 jump in step s
+            for (i=-L; i<L+1; i++){ // Potential final site in jump s
+                for (j = -L; j < L+1; j++) {
+                    if (dxs[s] == i && dys[s] == j){
+                        jumps[j+L][i+L]++;
+                        for (iI=-L; iI<L+1; iI++){ // Potential intermediate site
+                            for (jI=-L; jI<L+1; jI++) {
+                                if (dxIs[s] == iI && dyIs[s] == jI){
+                                    counter[j+L][i+L]++;
+                                    tracer[  (j+L)*(2*L+1)*(2*L+1)*(2*L+1) +
+                                             (i+L)*(2*L+1)*(2*L+1) +
+                                            (jI+L)*(2*L+1)+
+                                            (iI+L)]++;
+
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+
+    fflush(stdout);
+    printf("\n");
+    char *st = "FINAL";
+    char *stc = "START";
+
+    for (i=-L; i<L+1; i++){
+        for (j = -L; j < L+1; j++) {
+            for (jI=L; jI>-L-1; jI--) {
+                for (iI=-L; iI<L+1; iI++){
+                    if (i+L!=L || j+L!=L) tracer[(j+L)*(2*L+1)*(2*L+1)*(2*L+1) +
+                                                 (i+L)*(2*L+1)*(2*L+1) +
+                                                (jI+L)*(2*L+1)+
+                                                (iI+L)] /= jumps[j+L][i+L];
+                    if (i==iI && j==jI){
+                        tracerSum[j+L][i+L] += jumps[j+L][i+L]/numberOf3Site;
+                        printf("%8s",st);
+                    }
+                    else if (iI==0 && jI==0) printf("%8s", stc);
+                    else printf("%8.5f",tracer[(j+L)*(2*L+1)*(2*L+1)*(2*L+1) +
+                                               (i+L)*(2*L+1)*(2*L+1) +
+                                              (jI+L)*(2*L+1)+
+                                              (iI+L)]);
+
+                }
+                printf("\n");
+            }
+            printf("Jumps included:   %8.5f\n",  1-(jumps[j+L][i+L]-counter[j+L][i+L])/jumps[j+L][i+L]  );
+            printf("Jumps going here: %8.5f\n\n",tracerSum[j+L][i+L] );
+
+
+
+        }
+    }
+
+    printf("\n\n");
+    double sum=0, sum_up=0, sum_down=0, sum_left=0, sum_right=0;
+    printf("3-site jump probability matrix:\n");
+
+    for (j=L; j>-L-1; j--) {
+        for (i=-L; i<L+1; i++){
+            jumps[j+L][i+L] /= numberOf3Site;
+            sum += jumps[j+L][i+L];
+            if (i==0 && j==0) printf("%8s", stc);
+            else printf("%8.5f ", jumps[j+L][i+L]);
+            if (j>0) sum_up += jumps[j+L][i+L];
+            else if (j<0) sum_down += jumps[j+L][i+L];
+            if (i<0) sum_left += jumps[j+L][i+L];
+            else if (i>0) sum_right += jumps[j+L][i+L];
+        }
+        printf("\n");
+    }
+
+    printf("Prob 3 sum: %8.5f\n",sum);
+    printf("Prob left:  %8.5f Prob up:   %8.5f\n", sum_left, sum_up);
+    printf("Prob right: %8.5f Prob down: %8.5f\n", sum_right, sum_down);
+    printf("\n");
+}
+
+void MKcurrent::sample2SiteJumps(int steps)
+{
+
+    int s,i,j;
+    double **jumps;
+    int L=3;
+    jumps = new double*[2*L+1];
+    for (i = 0; i < 2*L+1; i++) {
+        jumps[i] = new double[2*L+1];
+    }
+
+    for (s=0; s < steps; s++){
+        if (dxIs[s] == 0 && dyIs[s] == 0){ // If we did 2 jump
+            for (i=-L; i<L+1; i++){
+                for (j = -L; j < L+1; j++) {
+                    if (dxs[s] == i && dys[s] == j){
+                        jumps[j+L][i+L]++;
+                    }
+                }
+            }
+
+        }
+    }
+    double sum=0, sum_up=0, sum_down=0, sum_left=0, sum_right=0;
+    printf("2-site jump probability matrix:\n");
+
+    for (j=L; j>-L-1; j--) {
+        for (i=-L; i<L+1; i++){
+            jumps[j+L][i+L] /= numberOf2Site;
+            sum+= jumps[j+L][i+L];
+            if (i<0) sum_left += jumps[j+L][i+L];
+            else if (i>0) sum_right += jumps[j+L][i+L];
+            if (j>0) sum_up += jumps[j+L][i+L];
+            else if (j<0) sum_down += jumps[j+L][i+L];
+            printf("%8.5f ", jumps[j+L][i+L]);
+        }
+        printf("\n");
+    }
+
+    printf("Prob 2 sum: %8.5f\n",sum);
+    printf("Prob left:  %8.5f Prob up:   %8.5f\n", sum_left, sum_up);
+    printf("Prob right: %8.5f Prob down: %8.5f\n", sum_right, sum_down);
+    printf("\n");
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

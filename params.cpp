@@ -20,7 +20,7 @@
 void params::readparams(int n, char* cmdline[])
 {
   int a;
-  ctype = 6; // 1 for normal, 2 for heat map, 3 for state file, 4 for state and spes file
+  ctype = 1; // 1 normal, 2 jump information
   cutoffexp = 7;
   d2el = 5;
   d = 1;
@@ -37,7 +37,7 @@ void params::readparams(int n, char* cmdline[])
   htype = 3;    //1: NN, 2: random,
   Hx = 0.0;
   Hy = 0.0;
-  Hz = 0.1;
+  Hz = 0.5;
   initruns = 1;
   inittemp = 0.02;
   istate = 1; //random state
@@ -58,7 +58,7 @@ void params::readparams(int n, char* cmdline[])
   running = false;
   runs = 1;
   screen = 0.5; //screening length: < 0 sets: len/2 (max: len-1)
-  seed2 = 7;
+  seed2 = 1203;
   skipsteps = 0; //all timesteps are recorded
   spesfilename = "";
   spesfilenamePassive = "";
@@ -68,13 +68,12 @@ void params::readparams(int n, char* cmdline[])
   statefilenamePassive = "";
   stopfilename = "stop";
   stopfilename = "stop";
-  temp = 1;
+  temp = 0.5;
   tposn = 0;
   trace = false;
   tracenum = 0; // = all particles
   xpbc = true; //periodic boundary condition in x-direction can be lifted
   outputprefix = "../../data/";
-  temp = 0.3;
   randShift = 0.1;
 
 
@@ -85,7 +84,7 @@ void params::readparams(int n, char* cmdline[])
 
   outputendfix = "Hz_" + string(Hz_s)+  "_Ex_" + string(Ex_s) + "_T_" + string(temp_s);
   writelines = 10000;
-  timesteps = 10;
+  timesteps = 1000000;
   if(n >1)
   {
 
